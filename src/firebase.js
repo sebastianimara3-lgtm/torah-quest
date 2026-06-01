@@ -1,10 +1,6 @@
-// Lee el banner desde /public/banner.json
-// Para cambiar el banner: editá ese archivo en GitHub y listo, sin reinstalar la app
-
 export async function cargarBanner() {
   try {
-    // Agrega un timestamp para evitar caché
-    const url = `/banner.json?t=${Date.now()}`;
+    const url = "https://raw.githubusercontent.com/sebastianimara3-lgtm/torah-quest/main/public/banner.json?t=" + Date.now();
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
