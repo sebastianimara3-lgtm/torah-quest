@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Brain, CheckCircle2, Crown, Flame, HelpCircle, RotateCcw, ScrollText, Shield, Sparkles, Star, Trophy, XCircle, User, ChevronRight, Zap, Award, AlertCircle } from "lucide-react";
+import { BookOpen, Brain, CheckCircle2, Crown, Flame, HelpCircle, RotateCcw, ScrollText, Shield, Sparkles, Star, Trophy, XCircle, User, ChevronRight, Zap, Award, AlertCircle, X as XIcon, ExternalLink } from "lucide-react";
+import { cargarBanner } from "./firebase";
 import { bereshitQuestions } from "./questions/bereshit";
 import { shemotQuestions } from "./questions/shemot";
 import { vayikraQuestions } from "./questions/vayikra";
@@ -188,6 +189,77 @@ function MenuScreen({ onStart }) {
 }
 
 // ── GAME ────────────────────────────────────────────────────────
+// ── BANNER HOOK ──────────────────────────────────────────────────
+function useBanner() {
+  const [banner, setBanner] = useState(null);
+  useEffect(() => {
+    cargarBanner().then(data => {
+      if (data && data.activo) setBanner(data);
+    });
+  }, []);
+  return banner;
+}
+
+// ── BANNER COMPONENT ─────────────────────────────────────────────
+function BannerPublicitario({ banner }) {
+  const [visible, setVisible] = useState(true);
+  if (!banner || !visible) return null;
+  const tieneImagen = banner.imagenUrl && banner.imagenUrl.trim() !== "";
+  function handleClick() {
+    if (banner.link) window.open(banner.link, "_blank");
+  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full rounded-xl overflow-hidden relative"
+      style={{
+        background: banner.colorFondo || "#1e1b4b",
+        border: "1px solid rgba(255,255,255,.15)",
+        cursor: banner.link ? "pointer" : "default",
+      }}
+      onClick={handleClick}
+    >
+      <button
+        onClick={e => { e.stopPropagation(); setVisible(false); }}
+        className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center z-10"
+        style={{ background: "rgba(0,0,0,.4)" }}
+      >
+        <XIcon className="w-3 h-3 text-white" />
+      </button>
+      <span className="absolute top-1.5 left-2" style={{ color: "rgba(255,255,255,.4)", fontSize: "9px" }}>
+        Publicidad
+      </span>
+      {tieneImagen ? (
+        <div className="flex items-center gap-3 px-3 pt-5 pb-3">
+          <img src={banner.imagenUrl} alt="banner"
+            className="h-12 w-12 object-contain rounded-lg flex-shrink-0"
+            onError={e => e.target.style.display = "none"} />
+          <div className="flex-1 min-w-0">
+            {banner.texto && (
+              <p className="text-sm font-semibold leading-tight"
+                style={{ color: banner.colorTexto || "#ffffff" }}>{banner.texto}</p>
+            )}
+            {banner.link && (
+              <p className="text-xs mt-0.5 flex items-center gap-1"
+                style={{ color: "rgba(255,255,255,.5)" }}>
+                <ExternalLink className="w-3 h-3" /> Ver más
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-3 pt-5 pb-3">
+          <p className="flex-1 text-sm font-semibold text-center leading-tight"
+            style={{ color: banner.colorTexto || "#ffffff" }}>{banner.texto}</p>
+          {banner.link && <ExternalLink className="w-4 h-4 flex-shrink-0" style={{ color: "rgba(255,255,255,.5)" }} />}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+
 function GameScreen({ player, mode, onFinish }) {
   const [questions] = useState(() => pickQuestions(mode.qty, mode.maxLevel));
   const [idx, setIdx] = useState(0);
@@ -200,6 +272,7 @@ function GameScreen({ player, mode, onFinish }) {
   const [halves, setHalves] = useState(1);
   const [skips, setSkips] = useState(1);
   const [streak, setStreak] = useState(0);
+  const banner = useBanner();
 
   const q = questions[idx];
   const answered = selected !== null;
@@ -387,6 +460,11 @@ function GameScreen({ player, mode, onFinish }) {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Banner publicitario fijo abajo */}
+      <div className="mt-3">
+        <BannerPublicitario banner={banner} />
+      </div>
     </motion.div>
   );
 }
