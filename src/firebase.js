@@ -1,43 +1,23 @@
-import { initializeApp } from "firebase/app";
-import { getRemoteConfig, fetchAndActivate, getValue } from "firebase/remote-config";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBMCdbEjqMzVN3uPINqUSuslSJYG6MTxPc",
-  projectId: "torah-quest-72061",
-  storageBucket: "torah-quest-72061.firebasestorage.app",
-  appId: "1:1033099516386:android:9aa75d12ab107e610b01bb",
-  messagingSenderId: "1033099516386",
-};
-
-const app = initializeApp(firebaseConfig);
-const remoteConfig = getRemoteConfig(app);
-
-// Actualiza cada 1 hora en producción
-remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
-
-// Valores por defecto si Firebase no responde
-remoteConfig.defaultConfig = {
-  banner_activo: false,
-  banner_texto: "",
-  banner_imagen_url: "",
-  banner_link: "",
-  banner_color_fondo: "#1e1b4b",
-  banner_color_texto: "#ffffff",
-};
+// Lee el banner desde /public/banner.json
+// Para cambiar el banner: editá ese archivo en GitHub y listo, sin reinstalar la app
 
 export async function cargarBanner() {
   try {
-    await fetchAndActivate(remoteConfig);
+    // Agrega un timestamp para evitar caché
+    const url = `/banner.json?t=${Date.now()}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
     return {
-      activo: getValue(remoteConfig, "banner_activo").asBoolean(),
-      texto: getValue(remoteConfig, "banner_texto").asString(),
-      imagenUrl: getValue(remoteConfig, "banner_imagen_url").asString(),
-      link: getValue(remoteConfig, "banner_link").asString(),
-      colorFondo: getValue(remoteConfig, "banner_color_fondo").asString(),
-      colorTexto: getValue(remoteConfig, "banner_color_texto").asString(),
+      activo:      data.activo      ?? false,
+      texto:       data.texto       ?? "",
+      imagenUrl:   data.imagen_url  ?? "",
+      link:        data.link        ?? "",
+      colorFondo:  data.color_fondo ?? "#1e1b4b",
+      colorTexto:  data.color_texto ?? "#ffffff",
     };
   } catch (err) {
-    console.warn("Firebase Remote Config no disponible:", err);
+    console.warn("No se pudo cargar el banner:", err);
     return null;
   }
 }
